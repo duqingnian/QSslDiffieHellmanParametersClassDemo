@@ -7,9 +7,9 @@
 #include <QDateTime>
 #include <QSslDiffieHellmanParameters>
 
-Server::Server(QObject *parent) : QObject(parent), server(new QTcpServer(this))
+Server::Server(QObject *parent) : QObject(parent), server(new SslServer(this))
 {
-    connect(server, &QTcpServer::newConnection, this, &Server::onNewConnection);
+    connect(server, &SslServer::newConnection, this, &Server::onNewConnection);
 }
 
 void Server::startServer(quint16 port)
@@ -23,20 +23,14 @@ void Server::startServer(quint16 port)
 
 void Server::onNewConnection()
 {
-    QSslSocket *sslSocket = new QSslSocket(this);
+    QSslSocket *sslSocket = qobject_cast<QSslSocket *>(server->nextPendingConnection());
+    if (!sslSocket) {
+        qDebug() << "Failed to cast QTcpSocket to QSslSocket.";
+        return;
+    }
+
     connect(sslSocket, &QSslSocket::encrypted, this, &Server::onEncrypted);
     connect(sslSocket, &QSslSocket::readyRead, this, &Server::onReadyRead);
-
-    if (!server->hasPendingConnections()) {
-        delete sslSocket;
-        return;
-    }
-
-    if (!sslSocket->setSocketDescriptor(server->nextPendingConnection()->socketDescriptor())) {
-        qDebug() << "Failed to cast QTcpSocket to QSslSocket.";
-        delete sslSocket;
-        return;
-    }
 
     QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
 

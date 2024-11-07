@@ -2,8 +2,8 @@
 #define SERVER_H
 
 #include <QObject>
+#include "SslServer.h"
 #include <QSslSocket>
-#include <QTcpServer>
 
 class Server : public QObject
 {
@@ -18,7 +18,7 @@ private slots:
     void onReadyRead();
 
 private:
-    QTcpServer *server;
+    SslServer *server;
 };
 
 #endif // SERVER_H
